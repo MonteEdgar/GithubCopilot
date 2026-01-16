@@ -27,6 +27,58 @@ document.addEventListener("DOMContentLoaded", () => {
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
         `;
 
+        // Participants section
+        const participantsSection = document.createElement("div");
+        participantsSection.className = "participants-section";
+
+        const participantsTitle = document.createElement("h5");
+        participantsTitle.textContent = "Participants";
+        participantsSection.appendChild(participantsTitle);
+
+        const participantsList = document.createElement("ul");
+        participantsList.className = "participants-list";
+
+        if (details.participants && details.participants.length > 0) {
+          details.participants.forEach((participant) => {
+            const li = document.createElement("li");
+            li.className = "participant-item";
+            // Contenedor para email y botón
+            const span = document.createElement("span");
+            span.textContent = participant;
+            li.appendChild(span);
+            // Botón de eliminar
+            const deleteBtn = document.createElement("button");
+            deleteBtn.className = "delete-btn";
+            deleteBtn.title = "Eliminar participante";
+            deleteBtn.innerHTML = "&#128465;"; // ícono de papelera Unicode
+            deleteBtn.onclick = async () => {
+              if (confirm(`¿Eliminar a ${participant} de ${name}?`)) {
+                try {
+                  const response = await fetch(`/activities/${encodeURIComponent(name)}/unregister?email=${encodeURIComponent(participant)}`, { method: "DELETE" });
+                  if (response.ok) {
+                    fetchActivities();
+                  } else {
+                    const result = await response.json();
+                    alert(result.detail || "No se pudo eliminar");
+                  }
+                } catch (err) {
+                  alert("Error de red al eliminar participante");
+                }
+              }
+            };
+            li.appendChild(deleteBtn);
+            participantsList.appendChild(li);
+          });
+        } else {
+          const li = document.createElement("li");
+          li.textContent = "No participants yet.";
+          li.style.color = "#888";
+          participantsList.appendChild(li);
+        }
+
+        participantsSection.appendChild(participantsList);
+        activityCard.appendChild(participantsSection);
+
         activitiesList.appendChild(activityCard);
 
         // Add option to select dropdown
@@ -62,6 +114,8 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        // Refrescar actividades para mostrar el nuevo participante
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
